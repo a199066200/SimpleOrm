@@ -1,3 +1,1 @@
-mygit 存放了我平时学习和开发的代码。
-使用git来存放文件是为了学习使用github。
-现在在练习使用git
+SimpleOrm是一个简单的读写Excel的Orm，目前只完成了基础版。
