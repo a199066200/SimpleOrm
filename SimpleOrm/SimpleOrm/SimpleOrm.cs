@@ -69,24 +69,40 @@ namespace SimpleOrm
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        public static DataTable BuildDataTable(object[] list)
+        public static DataTable BuildDataTable<T>(List<T> list)
         {
             if (list == null || !list.Any())
             {
                 throw new ArgumentNullException("argument list is null or empty");
             }
-            var properties = list[0].GetType().GetProperties().OrderBy(p=>p.Name);
-            var columns = properties.Select(p => new DataColumn(p.Name, p.DeclaringType)).OrderBy(p=>p.ColumnName);
+            var properties = list[0].GetType().GetProperties().OrderBy(p => p.Name);
+            var columns = properties.Select(p => new DataColumn(p.Name, p.PropertyType)).OrderBy(p => p.ColumnName);
             var table = new DataTable();
+            table.TableName = typeof(T).Name;
             foreach (var column in columns)
             {
                 table.Columns.Add(column);
             }
             foreach (var item in list)
             {
-                table.LoadDataRow(GetValues(item, properties), false);
+                DataRow row = table.NewRow();
+                var values = GetValues(item, properties);
+                for (int i = 0; i < values.Length; i++)
+                {
+                    row[i] = values[i];
+                }
+                table.Rows.Add(row);
             }
             return table;
+        }
+
+        private static object[] GetArray<T>(IList<T> list) {
+            var array = new object[list.Count()];
+            for (int i = 0; i < list.Count(); i++)
+            {
+                array[i] = list[i];
+            }
+            return array;
         }
 
         private static bool TryGetTargetTable(DataSet data, string tableName, out DataTable table)
@@ -127,7 +143,7 @@ namespace SimpleOrm
                 object o = Activator.CreateInstance(type);
                 foreach (var p in pairs)
                 {
-                    var property = type.GetProperty(p.Key);
+                    var property = type.GetField(p.Key);
                     property.SetValue(o, row[p.Value]);
                 }
                 return o;
@@ -153,7 +169,7 @@ namespace SimpleOrm
             var values = new List<object>();
             foreach (var p in properties)
             {
-                values.Add(p.GetValue(o));
+                values.Add(p.GetValue(o).ToString());
             }
             return values.ToArray();
         }
